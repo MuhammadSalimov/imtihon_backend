@@ -1,0 +1,65 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  phone     String   @unique
+  password  String
+  name      String
+  role      String   @default("user")
+  createdAt DateTime @default(now()) @map("created_at")
+  token     Token[]
+  enrollment Enrollment[]
+  @@id([id])
+  @@map("user")
+}
+
+model Token {
+  id        String   @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  userId    String @db.Uuid
+  refreshToken     String
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id] , onDelete: Cascade)
+  @@id([id])
+  @@map("token")
+}
+
+model Course {
+  id          String    @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  title       String
+  description String
+  photo       String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  lessons     Lesson[]
+  enrollment  Enrollment[]
+  @@id([id])
+  @@map("course")
+}
+
+model Lesson {
+  id        String   @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  title     String
+  video     String
+  courseId  String @db.Uuid  @map("course_id")
+  course    Course   @relation(fields: [courseId], references: [id])
+  @@id([id])
+  @@map("lesson")
+}
+
+model Enrollment {
+  id        String   @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  @@id([id])
+  @@map("enrollment")
+  @@unique([userId, courseId], name: "user_course_unique")
+}
